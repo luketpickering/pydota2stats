@@ -19,7 +19,7 @@ class Match(Base):
     
     
 class Hero(Base):
-    __tablename__ = 'heros'
+    __tablename__ = 'heroes'
     pk = Column(Integer, primary_key=True)
     hid = Column(Integer, unique=True, nullable=False)
     name = Column(String, unique=True, nullable=False)
@@ -49,7 +49,7 @@ class Play(Base):
     match = relationship("Match", backref=backref('plays'))
     upk = Column(Integer, ForeignKey('users.pk'))
     user = relationship("User", backref=backref('plays'))
-    hpk = Column(Integer, ForeignKey('heros.pk'))
+    hpk = Column(Integer, ForeignKey('heroes.pk'))
     hero = relationship("Hero", backref=backref('plays'))
     last_hits = Column(Integer)
     denies = Column(Integer)
@@ -57,6 +57,8 @@ class Play(Base):
     kills = Column(Integer)
     deaths = Column(Integer)
     assists = Column(Integer)
+    match_type = Column(Integer)
+    play_key = Column(Integer, nullable=False, unique=True)
     
     def __init__(self, **kwargs):
         try:
@@ -69,8 +71,14 @@ class Play(Base):
             self.last_hits = kwargs['last_hits']
             self.denies = kwargs['denies']
             self.team_win = kwargs['team_win']
+            self.match_type = kwargs['match_type']
+            self.play_key = int(str(self.user) + str(self.hero))
         except KeyError as ke:
             print "key error", ke
+            session.close()
+            exit()
+        except Exception as e:
+            print "Exception during Play init",kwargs['hero'],  e
             session.close()
             exit()
 

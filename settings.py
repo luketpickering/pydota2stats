@@ -8,7 +8,7 @@ match_details_url = 'https://api.steampowered.com/IDOTA2Match_570/GetMatchDetail
 #match_details_url = 'https://api.steampowered.com/IDOTA2Match_205790/GetMatchDetails/V001/?match_id=%s&key=%s'
 
 hero_data_url = 'https://api.steampowered.com/IEconDOTA2_570/GetHeroes/v0001/?key=%s&language=en_us'
-sql_con_str = 'sqlite:///dota2_stats.db'
+sql_con_str = 'sqlite:///dota2_stats.sqlite'
 dummy_sid32 = 4294967295
 
 get_heroes = False

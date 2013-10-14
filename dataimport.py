@@ -4,9 +4,10 @@ from common import *
 from models import *
 from time import ctime, time
 from sqlalchemy import exc
+from sqlalchemy.orm import exc as oexc
 
 ##############Data Import Utility Functions#############
-def new_play(mpk, play_dict, rad_win):
+def new_play(mpk, play_dict, rad_win, lobby_type):
     match, hero, user = None, None, None
     
     try:
@@ -15,22 +16,21 @@ def new_play(mpk, play_dict, rad_win):
         print "Error retrieving correct match", e
         raise e
     try:
-        hero = session.query(Hero).filter(Hero.hid == play_dict[u'hero_id'])\
-                .one()
+        hero = session.query(Hero)\
+            .filter(Hero.hid == play_dict[u'hero_id']).one()
     except Exception as e:
         print "Error retrieving correct hero", e
         raise e
     try:
         user = session.query(User)\
             .filter(User.steamid32 == play_dict[u'account_id']).one()
-    except Exception as e:
+    except oexc.NoResultFound as nrf:
         print "Haven't found a valid User. Creating"
         user = User(play_dict[u'account_id'])
         session.add(user)
-    #except Exception as e:
-     #   print "Error retrieving correct hero", e
-      #  exit()
-       # raise e
+    except Exception as e:
+        print "Error retrieving correct user", e
+        raise e
 
     pd = play_dict
     slot=pd[u'player_slot']
@@ -45,7 +45,8 @@ def new_play(mpk, play_dict, rad_win):
                   team_win=((slot < 5) and \
                             (rad_win == True)) or \
                            ((slot > 5) and \
-                            (rad_win == False))
+                            (rad_win == False)),
+                  match_type=lobby_type
                 )
     return np
 
@@ -62,7 +63,8 @@ def get_details(match):
     new_plays = []
     try:
         for p in plays:
-            np = new_play(match.pk,p,match_dict[u'radiant_win'])
+            np = new_play(match.pk,p,match_dict[u'radiant_win'],
+                            match_dict[u'lobby_type'])
             new_plays.append(np)
     except Exception as e:
         print e
