@@ -59,7 +59,21 @@ class Play(Base):
     assists = Column(Integer)
     
     def __init__(self, **kwargs):
-        pass
+        try:
+            self.match = kwargs['match']
+            self.user = kwargs['user']
+            self.hero = kwargs['hero']
+            self.kills = kwargs['kills']
+            self.deaths = kwargs['deaths']
+            self.assists = kwargs['assists']
+            self.last_hits = kwargs['last_hits']
+            self.denies = kwargs['denies']
+            self.team_win = kwargs['team_win']
+        except KeyError as ke:
+            print "key error", ke
+            session.close()
+            exit()
+
 
 def get_or_create(model, Qry, **kwargs):
     pass

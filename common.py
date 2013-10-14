@@ -4,7 +4,7 @@ from time import sleep
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from settings import *
-from models import Base
+from models import *
 
 session = None
 

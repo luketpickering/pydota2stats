@@ -6,63 +6,48 @@ from time import ctime, time
 from sqlalchemy import exc
 
 ##############Data Import Utility Functions#############
-def new_play(play_dict):
-    mpk, suid, hid, = None, None, None
+def new_play(mpk, play_dict, rad_win):
+    match, hero, user = None, None, None
     
     try:
-        mpk = kwargs['mpk']
-        suid = kwargs['suid']
-        hid = kwargs['hid']
-    except KeyError as ke:
-        print ke, kwargs
-        exit()
-    
-    mpkq = session.query(Match).filter(Match.pk == mpk)
-    if session.query(mpkq.exists()):
-        match = mpkq.first()
-    else:
-        print 'Invalid Match id: ', mid
-    suidq = session.query(User).filter(User.steamid32 == suid)
-    if session.query(suidq.exists()):
-        user = suidq.first()
-    else:
-        user = User(steamid3d=suid)
+        match = session.query(Match).filter(Match.pk == mpk).one()
+    except Exception as e:
+        print "Error retrieving correct match", e
+        raise e
+    try:
+        hero = session.query(Hero).filter(Hero.hid == play_dict[u'hero_id'])\
+                .one()
+    except Exception as e:
+        print "Error retrieving correct hero", e
+        raise e
+    try:
+        user = session.query(User)\
+            .filter(User.steamid32 == play_dict[u'account_id']).one()
+    except Exception as e:
+        print "Haven't found a valid User. Creating"
+        user = User(play_dict[u'account_id'])
         session.add(user)
-    hidq = session.query(Hero).filter(Hero.hid == hid)
-    if session.query(hidq.exists()):
-        hero = hidq.first()
-    else:
-        hero = Hero(hid=hid)
-        session.add(hero)
-    
-    self.match = match
-    self.user = user
-    self.hero = hero
-    try:
-        self.last_hits=kwargs['last_hits']
-        self.denies=kwargs['denies']
-        self.kills=kwargs['kills']
-        self.deaths=kwargs['deaths']
-        self.assists=kwargs['assists']
-        self.team_win=kwargs['team_win']
-    except KeyError as ke:
-        print ke
-        exit()
+    #except Exception as e:
+     #   print "Error retrieving correct hero", e
+      #  exit()
+       # raise e
 
-        slot=p[u'player_slot']
-
-        Play( mpk=self.pk,
-                  suid=p[u'account_id'],
-                  hid=p[u'hero_id'],
-                  kills=p[u'kills'],
-                  deaths=p[u'deaths'],
-                  assists=p[u'assists'],
-                  last_hits=p[u'last_hits'],
-                  denies=p[u'denies'],
+    pd = play_dict
+    slot=pd[u'player_slot']
+    np = Play( match=match,
+                  user=user,
+                  hero=hero,
+                  kills=pd[u'kills'],
+                  deaths=pd[u'deaths'],
+                  assists=pd[u'assists'],
+                  last_hits=pd[u'last_hits'],
+                  denies=pd[u'denies'],
                   team_win=((slot < 5) and \
-                            (match_dict[u'radiant_win'] == True)) or \
-                  ((slot > 5) and \
-                   (match_dict[u'radiant_win'] == False)))
+                            (rad_win == True)) or \
+                           ((slot > 5) and \
+                            (rad_win == False))
+                )
+    return np
 
 #Requests the matches details
 def get_details(match):
@@ -77,7 +62,8 @@ def get_details(match):
     new_plays = []
     try:
         for p in plays:
-            new_plays.append(p)
+            np = new_play(match.pk,p,match_dict[u'radiant_win'])
+            new_plays.append(np)
     except Exception as e:
         print e
         session.close()
@@ -160,6 +146,20 @@ for m in matches:
     except exc.IntegrityError as ie:
         print "caught IE"
         session.rollback()
+    except Exception as e:
+        print e
+        session.close()
+        exit()
+
+un_ret_matches = session.query(Match).filter(Match.got_details == False)\
+    .all()
+
+print "Need data on %s Matches" % len(un_ret_matches)
+for m in un_ret_matches:
+    nps = get_details(m)
+    try:
+        session.add_all(nps)
+        session.commit()
     except Exception as e:
         print e
         session.close()

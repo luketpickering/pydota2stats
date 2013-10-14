@@ -2,4 +2,4 @@ default:
 	echo "Hello"
 
 clean:
-	rm *.db
+	rm *.sqlite
