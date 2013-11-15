@@ -3,22 +3,20 @@ from json import load as jparse
 from time import sleep
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from settings import *
-from models import *
+import settings as st
+import models as mdls
 
 session = None
 
 def req_wretry(url):
     trys = 0
-    while( trys < num_retry ):
+    while( trys < st.num_retry ):
         trys += 1
         try:
-            print "requesting..."
             sleep(1)
             resp = urlopen(url)
         except Exception as e:
-            print 'Request Error: %s, Retrying...' % e
-            sleep(5)
+            sleep(1)
         else:
             try:
                 resp_dict = jparse(resp)
@@ -26,17 +24,18 @@ def req_wretry(url):
                 print 'Error parsing JSON: %s, re-requesting...' % e
             else:
                 return resp_dict[u'result']
-    print "failed %s times, calling it a day." % trys
+    print "Request failed %s times, calling it a day." % trys
+    session.close()
     exit()
 
 def check_exists(cls, pred):
     q = session.query(cls).filter(pred)
     return session.query(q.exists()).first()[0]
 
-def init_session():
+def init_session(init_db=False):
     Session = sessionmaker()
-    engine = create_engine(sql_con_str)
+    engine = create_engine(st.sql_con_str)
     Session.configure(bind=engine)
     if init_db:
-        Base.metadata.create_all(engine)
+        mdls.Base.metadata.create_all(engine)
     return Session()
